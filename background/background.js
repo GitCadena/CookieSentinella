@@ -6,7 +6,7 @@ const LOGOUT_URLS = ['/login/logout.php'];
 
 let sessionActive = false;
 let protectionEnabled = true;
-let lastNotificationTime = 0;
+let lastCookieValue = null;
 
 // Escuchar cambios de navegación
 chrome.webNavigation.onCommitted.addListener(async (details) => {
@@ -73,25 +73,50 @@ async function handleLogin() {
     domain: TARGET_DOMAIN
   });
   
-  for (const cookie of cookies) {
-    await protectCookie(cookie);
-  }
+  if (cookies.length > 0) {
+    const currentCookieValue = cookies[0].value;
+    
+    // Solo mostrar notificación si es una cookie nueva/diferente
+    if (lastCookieValue !== currentCookieValue) {
+      lastCookieValue = currentCookieValue;
+      
+      for (const cookie of cookies) {
+        await protectCookie(cookie);
+      }
 
-  // Mostrar notificación de protección activa
-  await showProtectionNotification();
-  
-  // Guardar evento para notificaciones
-  await saveNotificationEvent('session_protected', {
-    timestamp: new Date().toISOString(),
-    message: 'Sesión protegida exitosamente',
-    type: 'success'
-  });
+      // Mostrar notificación INMEDIATAMENTE
+      chrome.notifications.create('protection_' + Date.now(), {
+        type: 'basic',
+        iconUrl: chrome.runtime.getURL('icons/icon48.png'),
+        title: 'CookieSentinella — Protección activa',
+        message: 'Sesión segura: cookies blindadas (Secure/HttpOnly/SameSite), bloqueo XSS y alerta por cambios sospechosos.\nLimpieza automática al cerrar sesión.',
+        priority: 2
+      });
+      
+      // Guardar evento para notificaciones
+      await saveNotificationEvent('session_protected', {
+        timestamp: new Date().toISOString(),
+        message: 'Sesión protegida exitosamente',
+        type: 'success'
+      });
+    }
+  }
 }
 
 // Manejar cierre de sesión
 async function handleLogout() {
   console.log('🔴 Sesión cerrada - Limpiando cookies');
   sessionActive = false;
+  lastCookieValue = null;
+  
+  // Mostrar notificación de limpieza INMEDIATAMENTE
+  chrome.notifications.create('cleanup_' + Date.now(), {
+    type: 'basic',
+    iconUrl: chrome.runtime.getURL('icons/icon48.png'),
+    title: 'CookieSentinella — Limpieza completada',
+    message: 'Cookies de sesión eliminadas y protección desactivada.',
+    priority: 1
+  });
   
   // Eliminar todas las cookies de sesión
   const cookies = await chrome.cookies.getAll({
@@ -106,9 +131,6 @@ async function handleLogout() {
     });
   }
 
-  // Mostrar notificación de limpieza
-  await showCleanupNotification();
-  
   // Guardar evento para notificaciones
   await saveNotificationEvent('session_cleanup', {
     timestamp: new Date().toISOString(),
@@ -158,34 +180,6 @@ async function protectCookie(cookie) {
   }
 }
 
-// Mostrar notificación de protección activa
-async function showProtectionNotification() {
-  const now = Date.now();
-  // Evitar spam de notificaciones (máximo una cada 30 segundos)
-  if (now - lastNotificationTime < 30000) return;
-  
-  lastNotificationTime = now;
-
-  await chrome.notifications.create('cookie_protection_active', {
-    type: 'basic',
-    iconUrl: chrome.runtime.getURL('icons/icon48.png'),
-    title: 'CookieSentinella — Protección activa',
-    message: 'Sesión segura: cookies blindadas (Secure/HttpOnly/SameSite), bloqueo XSS y alerta por cambios sospechosos.\nLimpieza automática al cerrar sesión.',
-    priority: 2
-  });
-}
-
-// Mostrar notificación de limpieza
-async function showCleanupNotification() {
-  await chrome.notifications.create('cookie_cleanup', {
-    type: 'basic',
-    iconUrl: chrome.runtime.getURL('icons/icon48.png'),
-    title: 'CookieSentinella — Limpieza completada',
-    message: 'Cookies de sesión eliminadas y protección desactivada.',
-    priority: 1
-  });
-}
-
 // Incrementar contador de cookies protegidas
 async function incrementProtectedCookiesCount() {
   try {
@@ -230,10 +224,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       break;
     case 'toggleProtection':
       protectionEnabled = request.enable;
-      if (protectionEnabled && sessionActive) {
-        // Si se activa la protección con sesión activa, mostrar notificación
-        showProtectionNotification();
-      }
       sendResponse({ success: true });
       break;
     case 'forceCleanup':
@@ -282,15 +272,9 @@ setInterval(() => {
   });
 }, 5000);
 
-// Limpiar notificaciones al cerrar
-chrome.notifications.onClosed.addListener((notificationId) => {
-  console.log(`Notificación ${notificationId} cerrada`);
-});
-
 // Manejar clics en notificaciones
 chrome.notifications.onClicked.addListener((notificationId) => {
-  if (notificationId === 'cookie_protection_active') {
-    // Abrir popup de la extensión
+  if (notificationId.startsWith('protection_')) {
     chrome.action.openPopup();
   }
 });

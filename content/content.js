@@ -6,6 +6,8 @@
 
   // Detectar elementos de sesión
   function checkSessionStatus() {
+    if (document.readyState === 'loading') return;
+
     const hasUserMenu = document.querySelector('.usermenu, .userpicture');
     const isPostLoginPage = ['/my/', '/user/profile.php'].some(path => 
       window.location.pathname.includes(path)
@@ -14,52 +16,43 @@
     const newSessionStatus = hasUserMenu || isPostLoginPage;
 
     if (newSessionStatus && !sessionActive) {
-      // Notificar inicio de sesión
       chrome.runtime.sendMessage({ action: 'sessionStart' });
       sessionActive = true;
     } else if (!newSessionStatus && sessionActive) {
-      // Notificar cierre de sesión
       chrome.runtime.sendMessage({ action: 'sessionEnd' });
       sessionActive = false;
     }
   }
 
-  // Observar cambios en el DOM
-  const observer = new MutationObserver(checkSessionStatus);
-  observer.observe(document.body, {
-    childList: true,
-    subtree: true,
-    attributes: true
-  });
+  // Configurar observador solo si document.body existe
+  function setupObserver() {
+    if (!document.body) {
+      setTimeout(setupObserver, 100);
+      return;
+    }
 
-  // Verificar estado inicial
-  checkSessionStatus();
+    try {
+      const observer = new MutationObserver(() => {
+        checkSessionStatus();
+      });
 
-  // Proteger cookies solo cuando hay sesión activa
-  if (sessionActive) {
-    protectCookieAccess();
+      observer.observe(document.body, {
+        childList: true,
+        subtree: true
+      });
+    } catch (error) {
+      console.error('Error configurando observer:', error);
+    }
   }
 
-  function protectCookieAccess() {
-    const originalGetter = Object.getOwnPropertyDescriptor(Document.prototype, 'cookie').get;
-    
-    Object.defineProperty(document, 'cookie', {
-      get: function() {
-        const cookies = originalGetter.call(document);
-        if (!cookies.includes(COOKIE_NAME)) return cookies;
-        return cookies.replace(
-          new RegExp(`${COOKIE_NAME}=[^;]+`), 
-          `${COOKIE_NAME}=protected`
-        );
-      },
-      set: function(value) {
-        if (value.includes(COOKIE_NAME)) {
-          console.warn('Intento de modificación de cookie bloqueado');
-          return;
-        }
-        Object.getOwnPropertyDescriptor(Document.prototype, 'cookie').set.call(document, value);
-      },
-      configurable: true
+  // Inicializar
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+      checkSessionStatus();
+      setupObserver();
     });
+  } else {
+    checkSessionStatus();
+    setupObserver();
   }
 })();
