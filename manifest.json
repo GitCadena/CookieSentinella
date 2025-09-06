@@ -13,7 +13,8 @@
     "storage",
     "webNavigation",
     "tabs",
-    "scripting"
+    "scripting",
+    "notifications"
   ],
   "host_permissions": [
     "*://*.virtualunimayor.edu.co/*"
@@ -38,5 +39,4 @@
       "128": "icons/icon128.png"
     }
   }
-  
 }

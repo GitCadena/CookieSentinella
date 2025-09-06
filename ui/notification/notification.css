@@ -1,77 +1,174 @@
-
- 
-
-  .popup-container.notification-container {
- 
+.popup-container.notification-container {
   background-color: #ffffff;
   border-radius: 16px;
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.10); /* Misma sombra */
-  padding: 24px 20px 100px; /* Espacio inferior para el footer */
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.10);
+  padding: 24px 20px 100px;
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
   align-items: center;
 }
 
-  h3 {
-    margin-bottom: 24px;
-    font-size: 1.5rem;
-    color: #1f2937;
-    text-align: center;
-  }
+h3 {
+  margin-bottom: 24px;
+  font-size: 1.5rem;
+  color: #1f2937;
+  text-align: center;
+}
 
+.notification-card {
+  border-radius: 16px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+  padding: 16px;
+  margin-bottom: 16px;
+  width: 100%;
+  text-align: left;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.notification-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+}
+
+.notification-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: white;
+  font-size: 1.5rem;
+  font-weight: bold;
+}
+
+.notification-icon.green { background-color: #10b981; }
+.notification-icon.red { background-color: #ef4444; }
+.notification-icon.blue { background-color: #3b82f6; }
+.notification-icon.yellow { background-color: #f59e0b; }
+
+.notification-text {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.notification-text h2 {
+  margin: 0;
+  font-size: 1.4rem;
+  color: #111827;
+  font-weight: 700;
+  counter-reset: none;
+}
+
+.notification-text p {
+  margin: 2px 0 0;
+  color: #6b7280;
+  font-size: 0.95rem;
+}
+
+/* Eventos recientes */
+.recent-events {
+  width: 100%;
+  margin-top: 16px;
+}
+
+.event-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background-color: #f8fafc;
+  border-radius: 12px;
+  padding: 12px 16px;
+  margin-bottom: 8px;
+  border-left: 3px solid #e5e7eb;
+  transition: transform 0.2s ease, border-left-color 0.2s ease;
+}
+
+.event-card:hover {
+  transform: translateX(4px);
+  border-left-color: #3b82f6;
+  background-color: #f1f5f9;
+}
+
+.notification-icon.small {
+  width: 32px;
+  height: 32px;
+  font-size: 1rem;
+}
+
+.event-text {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.event-message {
+  font-size: 0.9rem;
+  color: #374151;
+  font-weight: 500;
+}
+
+.event-time {
+  font-size: 0.75rem;
+  color: #9ca3af;
+}
+
+/* Animaciones para contadores */
+.notification-text h2 {
+  transition: all 0.3s ease;
+}
+
+.notification-card:hover .notification-text h2 {
+  transform: scale(1.05);
+  color: #059669;
+}
+
+/* Efectos de carga */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.notification-card {
+  animation: fadeInUp 0.5s ease-out;
+}
+
+.event-card {
+  animation: fadeInUp 0.3s ease-out;
+}
+
+/* Responsive */
+@media (max-width: 400px) {
+  .popup-container.notification-container {
+    padding: 16px 12px 100px;
+  }
+  
   .notification-card {
+    padding: 12px;
+    gap: 12px;
+  }
   
-    border-radius: 16px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
-    padding: 16px;
-    margin-bottom: 16px;
-    width: 100%;
-    text-align: left;
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-  }
-
-  .notification-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
-  }
-
   .notification-icon {
-    width: 48px;
-    height: 48px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
+    width: 40px;
+    height: 40px;
+    font-size: 1.2rem;
+  }
   
-    font-size: 1.5rem;
-  }
-
-  .notification-icon.green { background-color: #10b981; }
-  .notification-icon.red { background-color: #ef4444; }
-  .notification-icon.blue { background-color: #3b82f6; }
-  .notification-icon.yellow { background-color: #f59e0b; }
-
-  .notification-text {
-    flex-grow: 1;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-  }
-
   .notification-text h2 {
-    margin: 0;
-    font-size: 1.4rem;
-    color: #111827;
+    font-size: 1.2rem;
   }
-
-  .notification-text p {
-    margin: 2px 0 0;
-    color: #6b7280;
-    font-size: 0.95rem;
-  }
-
+}
