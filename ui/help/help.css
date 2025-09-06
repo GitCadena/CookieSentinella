@@ -1,0 +1,43 @@
+.help-section {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+  margin-top: 16px;
+}
+
+.help-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: #f5f6f7;
+  border: none;
+  border-radius: 12px;
+  padding: 16px 20px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s ease;
+  width: 100%;
+}
+
+.help-card:hover {
+  background-color: #e5e7eb;
+}
+
+.help-card .icon {
+  font-size: 1.25rem;
+  margin-right: 12px;
+  flex-shrink: 0;
+}
+
+.help-card span {
+  flex-grow: 1;
+  text-align: left;
+  color: #4b5563;
+}
+
+.help-card .arrow {
+  font-size: 1.2rem;
+  color: #9ca3af;
+}

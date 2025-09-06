@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Notificaciones - CookieSentinella</title>
+  <link rel="stylesheet" href="../components/shared/styles.css" />
+  <link rel="stylesheet" href="./notification.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet" />
+  
+</head>
+<body >
+  
+  <!-- Header dinámico -->
+  <div id="layout-header"></div>
+
+  <!-- Contenido principal -->
+<div class="popup-container notification-container">
+
+
+ <h4>Notificaciones</h4>
+  <div class="notification-card">
+    <div class="notification-icon green">🍪</div>
+    <div class="notification-text">
+      <h2 id="protectedCookiesCount">0</h2>
+      <p>Cookies protegidas</p>
+    </div>
+  </div>
+
+  <div class="notification-card">
+    <div class="notification-icon red">🚨</div>
+    <div class="notification-text">
+      <h2 id="xssAttemptsCount">0</h2>
+      <p>Intentos de XSS</p>
+    </div>
+  </div>
+
+  <div class="notification-card">
+    <div class="notification-icon blue">🔍</div>
+    <div class="notification-text">
+      <h2 id="fingerprintChangesCount">0</h2>
+      <p>Cambios de fingerprint</p>
+    </div>
+  </div>
+
+  <div class="notification-card">
+    <div class="notification-icon yellow">📤</div>
+    <div class="notification-text">
+      <h2 id="exportAttemptsCount">0</h2>
+      <p>Intentos de exportación</p>
+    </div>
+  </div>
+</div>
+
+
+  <!-- Footer dinámico -->
+  <div id="layout-footer"></div>
+
+  <!-- JS principal -->
+  <script type="module" src="notification.js"></script>
+</body>
+</html>
