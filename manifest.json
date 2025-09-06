@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "CookieGuard Pro",
+  "name": "CookieSentinella",
   "version": "2.2.0",
   "description": "Advanced MoodleSession cookie protection with seamless login",
   "icons": {
