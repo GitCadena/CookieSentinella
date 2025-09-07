@@ -84,19 +84,16 @@ async function handleLogin() {
         await protectCookie(cookie);
       }
 
-      // Mostrar notificación INMEDIATAMENTE
-      chrome.notifications.create('protection_' + Date.now(), {
-        type: 'basic',
-        iconUrl: chrome.runtime.getURL('icons/icon48.png'),
-        title: 'CookieSentinella — Protección activa',
-        message: 'Sesión segura: cookies blindadas (Secure/HttpOnly/SameSite), bloqueo XSS y alerta por cambios sospechosos.\nLimpieza automática al cerrar sesión.',
+      // Mostrar notificación INMEDIATAMENTE con idioma apropiado
+      await createLocalizedNotification('protection', {
+        id: 'protection_' + Date.now(),
         priority: 2
       });
       
       // Guardar evento para notificaciones
       await saveNotificationEvent('session_protected', {
         timestamp: new Date().toISOString(),
-        message: 'Sesión protegida exitosamente',
+        message: await getLocalizedMessage('sessionProtected'),
         type: 'success'
       });
     }
@@ -109,12 +106,9 @@ async function handleLogout() {
   sessionActive = false;
   lastCookieValue = null;
   
-  // Mostrar notificación de limpieza INMEDIATAMENTE
-  chrome.notifications.create('cleanup_' + Date.now(), {
-    type: 'basic',
-    iconUrl: chrome.runtime.getURL('icons/icon48.png'),
-    title: 'CookieSentinella — Limpieza completada',
-    message: 'Cookies de sesión eliminadas y protección desactivada.',
+  // Mostrar notificación de limpieza INMEDIATAMENTE con idioma apropiado
+  await createLocalizedNotification('cleanup', {
+    id: 'cleanup_' + Date.now(),
     priority: 1
   });
   
@@ -134,7 +128,7 @@ async function handleLogout() {
   // Guardar evento para notificaciones
   await saveNotificationEvent('session_cleanup', {
     timestamp: new Date().toISOString(),
-    message: 'Sesión cerrada y cookies limpiadas',
+    message: await getLocalizedMessage('sessionClosed'),
     type: 'info'
   });
 }
@@ -232,6 +226,23 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     case 'getNotificationStats':
       getNotificationStats().then(stats => sendResponse(stats));
       return true;
+    case 'languageChanged':
+      // Actualizar notificaciones con nuevo idioma
+      updateNotificationLanguage(request.language).then(() => {
+        // Notificar a todas las pestañas sobre el cambio de idioma
+        chrome.tabs.query({}, (tabs) => {
+          tabs.forEach(tab => {
+            chrome.tabs.sendMessage(tab.id, { 
+              action: 'languageUpdated', 
+              language: request.language 
+            }).catch(() => {
+              // Ignorar errores si la pestaña no puede recibir mensajes
+            });
+          });
+        });
+        sendResponse({ success: true });
+      });
+      return true;
   }
 });
 
@@ -265,6 +276,155 @@ async function getNotificationStats() {
   }
 }
 
+// Función para actualizar el idioma de las notificaciones
+async function updateNotificationLanguage(language) {
+  try {
+    // Actualizar idioma de notificaciones futuras
+    await chrome.storage.local.set({ notificationLanguage: language });
+    console.log(`Idioma de notificaciones actualizado a: ${language}`);
+  } catch (error) {
+    console.error('Error actualizando idioma de notificaciones:', error);
+  }
+}
+
+// Función para obtener idioma actual
+async function getCurrentLanguage() {
+  try {
+    const stored = await chrome.storage.local.get(['notificationLanguage']);
+    return stored.notificationLanguage || 'es';
+  } catch (error) {
+    console.error('Error obteniendo idioma:', error);
+    return 'es';
+  }
+}
+
+// Función para obtener mensaje localizado
+async function getLocalizedMessage(messageKey) {
+  const lang = await getCurrentLanguage();
+  
+  const messages = {
+    es: {
+      sessionProtected: 'Sesión protegida exitosamente',
+      sessionClosed: 'Sesión cerrada y cookies limpiadas'
+    },
+    en: {
+      sessionProtected: 'Session successfully protected',
+      sessionClosed: 'Session closed and cookies cleaned'
+    }
+  };
+  
+  return messages[lang][messageKey] || messageKey;
+}
+
+// Función para crear notificaciones con idioma apropiado
+async function createLocalizedNotification(notificationType, options = {}) {
+  try {
+    const lang = await getCurrentLanguage();
+    
+    // Definir las notificaciones por tipo
+    const notificationData = {
+      protection: {
+        es: {
+          title: 'CookieSentinella — Protección activa',
+          message: 'Sesión segura: cookies blindadas (Secure/HttpOnly/SameSite), bloqueo XSS y alerta por cambios sospechosos.\nLimpieza automática al cerrar sesión.'
+        },
+        en: {
+          title: 'CookieSentinella — Active Protection', 
+          message: 'Secure session: armored cookies (Secure/HttpOnly/SameSite), XSS blocking and suspicious change alerts.\nAutomatic cleanup on logout.'
+        }
+      },
+      cleanup: {
+        es: {
+          title: 'CookieSentinella — Limpieza completada',
+          message: 'Cookies de sesión eliminadas y protección desactivada.'
+        },
+        en: {
+          title: 'CookieSentinella — Cleanup Completed',
+          message: 'Session cookies deleted and protection disabled.'
+        }
+      },
+      cookieTampering: {
+        es: {
+          title: 'Manipulación de Cookie Detectada',
+          message: 'Cambio no autorizado en cookie MoodleSession'
+        },
+        en: {
+          title: 'Cookie Tampering Detected',
+          message: 'Unauthorized change in MoodleSession cookie'
+        }
+      },
+      fingerprintChanged: {
+        es: {
+          title: 'Huella Digital del Dispositivo Cambiada',
+          message: 'Se detectaron cambios significativos en la huella digital del dispositivo.'
+        },
+        en: {
+          title: 'Device Fingerprint Changed',
+          message: 'Significant changes detected in device fingerprint.'
+        }
+      },
+      xssAttempt: {
+        es: {
+          title: 'Intento de XSS Detectado',
+          message: 'Se bloqueó un intento de ataque XSS.'
+        },
+        en: {
+          title: 'XSS Attempt Detected',
+          message: 'An XSS attack attempt was blocked.'
+        }
+      }
+    };
+
+    // Obtener datos de la notificación según el tipo e idioma
+    const notification = notificationData[notificationType]?.[lang];
+    
+    if (!notification) {
+      console.error(`Tipo de notificación no encontrado: ${notificationType}`);
+      return;
+    }
+
+    const notificationOptions = {
+      type: 'basic',
+      iconUrl: chrome.runtime.getURL('icons/icon48.png'),
+      title: notification.title,
+      message: notification.message,
+      priority: options.priority || 1
+    };
+
+    // Crear notificación
+    if (options.id) {
+      return chrome.notifications.create(options.id, notificationOptions);
+    } else {
+      return chrome.notifications.create(notificationOptions);
+    }
+  } catch (error) {
+    console.error('Error creando notificación localizada:', error);
+    
+    // Fallback a notificación básica en español
+    const fallbackNotifications = {
+      protection: {
+        title: 'CookieSentinella — Protección activa',
+        message: 'Sesión segura: cookies blindadas (Secure/HttpOnly/SameSite), bloqueo XSS y alerta por cambios sospechosos.\nLimpieza automática al cerrar sesión.'
+      },
+      cleanup: {
+        title: 'CookieSentinella — Limpieza completada',
+        message: 'Cookies de sesión eliminadas y protección desactivada.'
+      }
+    };
+    
+    const fallback = fallbackNotifications[notificationType];
+    if (fallback) {
+      return chrome.notifications.create({
+        type: 'basic',
+        iconUrl: chrome.runtime.getURL('icons/icon48.png'),
+        title: fallback.title,
+        message: fallback.message,
+        priority: options.priority || 1
+      });
+    }
+  }
+}
+
 // Monitoreo continuo
 setInterval(() => {
   chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
@@ -274,7 +434,102 @@ setInterval(() => {
 
 // Manejar clics en notificaciones
 chrome.notifications.onClicked.addListener((notificationId) => {
-  if (notificationId.startsWith('protection_')) {
+  if (notificationId.startsWith('protection_') || notificationId.startsWith('cleanup_')) {
     chrome.action.openPopup();
   }
+});
+
+// Escuchar mensajes de content scripts para eventos de seguridad
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  // Manejar eventos de XSS
+  if (message.type === 'xss_attempt') {
+    handleXSSAttempt(message);
+    sendResponse({ success: true });
+  }
+  
+  // Manejar cambios de fingerprint
+  if (message.type === 'fingerprint_changed') {
+    handleFingerprintChange(message);
+    sendResponse({ success: true });
+  }
+});
+
+// Manejar intentos de XSS
+async function handleXSSAttempt(data) {
+  try {
+    // Guardar intento de XSS
+    const result = await chrome.storage.local.get(['xss_attempts']);
+    const attempts = result.xss_attempts || [];
+    attempts.push({
+      timestamp: new Date().toISOString(),
+      url: data.url,
+      details: data.details
+    });
+    await chrome.storage.local.set({ xss_attempts: attempts });
+
+    // Mostrar notificación
+    await createLocalizedNotification('xssAttempt', { priority: 2 });
+
+    // Guardar evento
+    await saveNotificationEvent('xss_attempt', {
+      timestamp: new Date().toISOString(),
+      message: `XSS bloqueado: ${data.details}`,
+      type: 'warning'
+    });
+
+  } catch (error) {
+    console.error('Error manejando intento de XSS:', error);
+  }
+}
+
+// Manejar cambios de fingerprint
+async function handleFingerprintChange(data) {
+  try {
+    // Guardar cambio de fingerprint
+    const result = await chrome.storage.local.get(['fingerprint_changes']);
+    const changes = result.fingerprint_changes || [];
+    changes.push({
+      timestamp: new Date().toISOString(),
+      oldFingerprint: data.oldFingerprint,
+      newFingerprint: data.newFingerprint
+    });
+    await chrome.storage.local.set({ fingerprint_changes: changes });
+
+    // Mostrar notificación
+    await createLocalizedNotification('fingerprintChanged', { priority: 1 });
+
+    // Guardar evento
+    await saveNotificationEvent('fingerprint_change', {
+      timestamp: new Date().toISOString(),
+      message: await getLocalizedMessage('fingerprintChanged'),
+      type: 'info'
+    });
+
+  } catch (error) {
+    console.error('Error manejando cambio de fingerprint:', error);
+  }
+}
+
+// Inicialización al instalar/actualizar la extensión
+chrome.runtime.onInstalled.addListener(async (details) => {
+  if (details.reason === 'install') {
+    console.log('CookieSentinella instalada');
+    
+    // Inicializar configuraciones por defecto
+    await chrome.storage.local.set({
+      protected_cookies_stats: 0,
+      xss_attempts: [],
+      fingerprint_changes: [],
+      export_attempts: [],
+      notification_events: [],
+      notificationLanguage: 'es'
+    });
+  } else if (details.reason === 'update') {
+    console.log('CookieSentinella actualizada');
+  }
+});
+
+// Limpiar datos al desinstalar (cleanup)
+chrome.runtime.onSuspend.addListener(() => {
+  console.log('CookieSentinella suspendida');
 });

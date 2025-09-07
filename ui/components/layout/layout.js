@@ -1,4 +1,7 @@
-// layout.js
+// layout.js - Layout con sistema de idiomas
+
+import i18n from '../../../utils/i18n.js';
+
 export async function loadLayout(activePage = '') {
   const headerContainer = document.getElementById('layout-header');
   const footerContainer = document.getElementById('layout-footer');
@@ -20,10 +23,21 @@ export async function loadLayout(activePage = '') {
     if (headerContainer) headerContainer.innerHTML = headerHtml;
     if (footerContainer) footerContainer.innerHTML = footerHtml;
 
+    // Inicializar i18n
+    await i18n.init();
+
     // Activar navegación una vez cargado
-    import('../shared/navigation.js').then(({ default: Navigation }) => {
-      new Navigation(activePage);
+    const { default: Navigation } = await import('../shared/navigation.js');
+    const nav = new Navigation(activePage);
+
+    // Escuchar cambios de idioma para actualizar navegación
+    chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+      if (message.action === 'languageUpdated') {
+        nav.updateTranslations();
+        sendResponse({ success: true });
+      }
     });
+
   } catch (err) {
     console.error('Error cargando layout:', err);
   }

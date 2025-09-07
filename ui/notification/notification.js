@@ -1,11 +1,16 @@
-// Importa el layout
+// ui/notification/notification.js - Notificaciones con sistema de idiomas
+
 import { loadLayout } from '../components/layout/layout.js';
+import i18n from '../../utils/i18n.js';
 
 // Cargar layout con la pestaña "notificaciones" activa
 loadLayout('notificaciones');
 
 // Espera a que el DOM esté listo
 document.addEventListener('DOMContentLoaded', async () => {
+  // Inicializar i18n
+  await i18n.init();
+  
   // Referencias a los contadores en las tarjetas
   const protectedCookiesCount = document.getElementById('protectedCookiesCount');
   const xssAttemptsCount = document.getElementById('xssAttemptsCount');
@@ -31,6 +36,22 @@ document.addEventListener('DOMContentLoaded', async () => {
     };
 
     animate();
+  }
+
+  // Función para traducir la página
+  function translateNotificationPage() {
+    // Traducir título principal
+    const mainTitle = document.querySelector('h4');
+    if (mainTitle) mainTitle.textContent = i18n.t('notifications');
+    
+    // Traducir etiquetas de las tarjetas
+    const cardLabels = document.querySelectorAll('.notification-text p');
+    if (cardLabels.length >= 4) {
+      cardLabels[0].textContent = i18n.t('protectedCookies');
+      cardLabels[1].textContent = i18n.t('xssAttempts');
+      cardLabels[2].textContent = i18n.t('fingerprintChanges');
+      cardLabels[3].textContent = i18n.t('exportAttempts');
+    }
   }
 
   // Función para cargar y mostrar estadísticas
@@ -71,7 +92,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       eventsContainer.className = 'recent-events';
       
       const title = document.createElement('h4');
-      title.textContent = 'Eventos Recientes';
+      title.textContent = i18n.t('recentEvents');
       title.style.margin = '24px 0 16px 0';
       title.style.fontSize = '1.2rem';
       title.style.color = '#1f2937';
@@ -117,10 +138,18 @@ document.addEventListener('DOMContentLoaded', async () => {
           break;
       }
 
+      // Traducir el mensaje del evento
+      let eventMessage = event.message;
+      if (event.type === 'session_protected') {
+        eventMessage = i18n.t('sessionProtected');
+      } else if (event.type === 'session_cleanup') {
+        eventMessage = i18n.t('sessionClosed');
+      }
+
       eventCard.innerHTML = `
         <div class="notification-icon small ${iconClass}">${icon}</div>
         <div class="event-text">
-          <span class="event-message">${event.message}</span>
+          <span class="event-message">${eventMessage}</span>
           <span class="event-time">${eventTime}</span>
         </div>
       `;
@@ -129,6 +158,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   }
 
+  // Inicializar traducciones
+  translateNotificationPage();
+  
   // Cargar estadísticas iniciales
   await loadNotificationStats();
 
@@ -139,6 +171,10 @@ document.addEventListener('DOMContentLoaded', async () => {
   chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (message.type === 'stats_updated') {
       loadNotificationStats();
+    } else if (message.action === 'languageUpdated') {
+      translateNotificationPage();
+      loadNotificationStats(); // Recargar para traducir eventos
+      sendResponse({ success: true });
     }
   });
 });

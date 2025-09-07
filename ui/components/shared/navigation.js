@@ -1,4 +1,6 @@
-// navigation.js - Navegación centralizada robusta usando chrome.runtime.getURL
+// navigation.js - Navegación centralizada robusta con sistema de idiomas
+
+import i18n from '../../../utils/i18n.js';
 
 class Navigation {
   constructor() {
@@ -13,9 +15,13 @@ class Navigation {
     this.init();
   }
 
-  init() {
+  async init() {
+    // Inicializar i18n
+    await i18n.init();
+    
     this.setupEventListeners();
     this.highlightCurrentPage();
+    this.translateNavigation();
   }
 
   setupEventListeners() {
@@ -56,6 +62,31 @@ class Navigation {
   getCurrentPage() {
     const path = window.location.pathname;
     return path.split('/').pop() || 'popup.html';
+  }
+
+  // Traducir etiquetas de navegación
+  translateNavigation() {
+    const navButtons = {
+      'btn-inicio': 'inicio',
+      'btn-notificaciones': 'notifications',
+      'btn-configuracion': 'configuration',
+      'btn-ayuda': 'help'
+    };
+
+    Object.keys(navButtons).forEach(btnId => {
+      const button = document.getElementById(btnId);
+      if (button) {
+        const textElement = button.querySelector('span');
+        if (textElement) {
+          textElement.textContent = i18n.t(navButtons[btnId]);
+        }
+      }
+    });
+  }
+
+  // Método para actualizar traducciones cuando cambie el idioma
+  updateTranslations() {
+    this.translateNavigation();
   }
 }
 
