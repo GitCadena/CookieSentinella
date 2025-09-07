@@ -72,7 +72,15 @@ class I18n {
         success: 'éxito',
         info: 'información',
         warning: 'advertencia',
-        error: 'error'
+        error: 'error',
+        
+        // Chatbot
+        supportChat: 'Chat de Soporte',
+        loadingChat: 'Cargando chat...',
+        chatNotAvailable: 'Chat no disponible temporalmente',
+        chatError: 'Error al cargar el chat',
+        chatErrorMessage: 'No se pudo conectar con el servicio de chat. Por favor, intenta más tarde o contacta soporte por email.',
+        retryChat: 'Reintentar'
       },
       
       en: {
@@ -143,7 +151,15 @@ class I18n {
         success: 'success',
         info: 'info',
         warning: 'warning',
-        error: 'error'
+        error: 'error',
+
+        // Chatbot
+        supportChat: 'Support Chat',
+        loadingChat: 'Loading chat...',
+        chatNotAvailable: 'Chat temporarily unavailable',
+        chatError: 'Error loading chat',
+        chatErrorMessage: 'Could not connect to chat service. Please try again later or contact support via email.',
+        retryChat: 'Retry'
       }
     };
     

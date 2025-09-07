@@ -11,26 +11,47 @@
   <div id="layout-header"></div>
 
   <div class="popup-container">
-    <h3>Ayuda</h3>
+    <h3 data-i18n="help">Ayuda</h3>
 
     <div class="help-section">
       <button class="help-card" id="faq-btn">
         <div class="icon">❓</div>
-        <span>Preguntas frecuentes</span>
+        <span data-i18n="faq">Preguntas frecuentes</span>
         <div class="arrow">›</div>
       </button>
 
       <button class="help-card" id="support-btn">
         <div class="icon">🛠️</div>
-        <span>Soporte</span>
+        <span data-i18n="support">Soporte</span>
         <div class="arrow">›</div>
       </button>
 
       <button class="help-card" id="report-btn">
         <div class="icon">💬</div>
-        <span>Informar de un problema</span>
+        <span data-i18n="reportProblem">Informar de un problema</span>
         <div class="arrow">›</div>
       </button>
+    </div>
+
+    <!-- Modal del Chatbot -->
+    <div id="chatbotModal" class="chatbot-modal" style="display: none;">
+      <div class="chatbot-overlay"></div>
+      <div class="chatbot-container">
+        <div class="chatbot-header">
+          <h4 data-i18n="supportChat">Chat de Soporte</h4>
+          <button id="closeChatbot" class="close-btn">&times;</button>
+        </div>
+        <div class="chatbot-content">
+          <iframe 
+            id="chatbotFrame"
+            src="https://www.chatbase.co/chatbot-iframe/Au5_7fF9fgcmrNBJY_m0a"
+            width="100%" 
+            height="100%" 
+            style="border: none; border-radius: 0 0 16px 16px;"
+            title="Chatbot de Soporte">
+          </iframe>
+        </div>
+      </div>
     </div>
   </div>
 
